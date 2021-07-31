@@ -1,17 +1,3 @@
-<<<<<<< Updated upstream
-// const fs = require('fs/promises')
-// const contacts = require('./contacts.json')
-
-const listContacts = async () => {}
-
-const getContactById = async (contactId) => {}
-
-const removeContact = async (contactId) => {}
-
-const addContact = async (body) => {}
-
-const updateContact = async (contactId, body) => {}
-=======
 const { Contact } = require('../models');
 
 const listContacts = async () => {
@@ -60,7 +46,7 @@ const updateStatus = async (contactId, body) => {
     throw error;
   }
 };
->>>>>>> Stashed changes
+
 
 module.exports = {
   listContacts,
@@ -68,9 +54,6 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
-<<<<<<< Updated upstream
-}
-=======
   updateStatus,
 };
->>>>>>> Stashed changes
+
