@@ -85,16 +85,17 @@ router.patch('/:contactId', async (req, res, next) => {
 router.patch('/:contactId/favorite', async (req, res, next) => {
   const { contactId } = req.params;
   const { body } = req;
-  console.log(Object.keys(req.body));
+  console.log(Object.keys);
   try {
-    const result = await Contacts.updateStatus(contactId, body);
-    if (Object.keys(req.body).length === 0) {
+    const isBodyEmpty = Object.keys(req.body).length === 0;
+    if (isBodyEmpty) {
       return res.status(400).json({
         status: 'error',
         code: 400,
         message: 'missing field favorite',
       });
     }
+    const result = await Contacts.updateStatus(contactId, body);
     if (!result) {
       res.status(404).json({
         status: 'error',
@@ -103,6 +104,7 @@ router.patch('/:contactId/favorite', async (req, res, next) => {
       });
       return;
     }
+
     res.json({
       status: 'success',
       code: 200,
