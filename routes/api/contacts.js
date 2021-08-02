@@ -6,8 +6,8 @@ const { updateContacts, contactScheme } = require('./validation');
 
 router.get('/', async (req, res, next) => {
   try {
-    const contacts = await Contacts.listContacts();
-    res.json({ status: 'success', code: 200, data: { contacts } });
+    const result = await Contacts.listContacts();
+    res.json({ status: 'success', code: 200, data: { result } });
   } catch (e) {
     next(e);
   }
@@ -82,4 +82,38 @@ router.patch('/:contactId', async (req, res, next) => {
   }
 });
 
+router.patch('/:contactId/favorite', async (req, res, next) => {
+  const { contactId } = req.params;
+  const { body } = req;
+  console.log(Object.keys);
+  try {
+    const isBodyEmpty = Object.keys(req.body).length === 0;
+    if (isBodyEmpty) {
+      return res.status(400).json({
+        status: 'error',
+        code: 400,
+        message: 'missing field favorite',
+      });
+    }
+    const result = await Contacts.updateStatus(contactId, body);
+    if (!result) {
+      res.status(404).json({
+        status: 'error',
+        code: 404,
+        message: 'Not found',
+      });
+      return;
+    }
+
+    res.json({
+      status: 'success',
+      code: 200,
+      data: { result },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
+

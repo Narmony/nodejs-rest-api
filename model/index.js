@@ -1,69 +1,52 @@
-const fs = require('fs/promises');
-const path = require('path');
-const { v4: uuid } = require('uuid');
+const { Contact } = require('../models');
 
-const readData = async () => {
-  const data = await fs.readFile(
-    path.join(__dirname, 'contacts.json'),
-    'utf-8',
-  );
-  return JSON.parse(data);
-};
-
-const listContacts = async (req, res) => {
-  return await readData();
+const listContacts = async () => {
+  return Contact.find();
 };
 
 const getContactById = async contactId => {
-  const data = await readData();
-  const [result] = data.filter(contact => contact.id === contactId);
-  return result;
+  try {
+    const result = Contact.findById(contactId);
+    return result;
+  } catch (error) {
+    if (error.message.includes('Cast to ObjectId failed')) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 const removeContact = async contactId => {
-  const data = await readData();
-  const result = data.findIndex(e => {
-    return e.id === contactId;
-  });
-  if (result === -1) {
-    return null;
+  try {
+    const result = await Contact.findByIdAndDelete(contactId);
+    return result;
+  } catch (error) {
+    if (error.message.includes('Cast to ObjectId failed')) {
+      return null;
+    }
+    throw error;
   }
-  const delitedContact = data.splice(result, 1);
-  await fs.writeFile(
-    path.join(__dirname, 'contacts.json'),
-    JSON.stringify(data),
-  );
-  return delitedContact;
 };
 
 const addContact = async body => {
-  const id = uuid();
-  const record = {
-    id,
-    ...body,
-  };
-  const data = await readData();
-  data.push(record);
-  await fs.writeFile(
-    path.join(__dirname, 'contacts.json'),
-    JSON.stringify(data),
-  );
-  return record;
+  return Contact.create(body);
 };
 
 const updateContact = async (contactId, body) => {
-  const data = await readData();
-
-  const [result] = data.filter(contact => contact.id === contactId);
-  if (result) {
-    Object.assign(result, body);
-    await fs.writeFile(
-      path.join(__dirname, 'contacts.json'),
-      JSON.stringify(data),
-    );
-  }
-  return result;
+  return Contact.findByIdAndUpdate(contactId, body);
 };
+
+const updateStatus = async (contactId, body) => {
+  try {
+    return await Contact.findByIdAndUpdate(contactId, body, { new: true });
+  } catch (error) {
+    if (error.message.includes('Cast to ObjectId failed for value')) {
+      return null;
+    }
+    throw error;
+  }
+};
+
 
 module.exports = {
   listContacts,
@@ -71,4 +54,6 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
+  updateStatus,
 };
+
