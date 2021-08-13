@@ -1,23 +1,33 @@
 const express = require('express');
 const router = express.Router();
-const Contacts = require('../../model');
+const {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact,
+  updateStatus,
+} = require('../../repositories');
 
 const { updateContacts, contactScheme } = require('./validation');
+const guard = require('../../helpers/guard');
 
-router.get('/', async (req, res, next) => {
+router.get('/', guard, async (req, res, next) => {
   try {
-    const result = await Contacts.listContacts();
-    res.json({ status: 'success', code: 200, data: { result } });
+    const userId = req.user.id;
+    const {docs: contacts, ...rest} = await listContacts(userId, req.query);
+    res.json({ status: 'success', code: 200, data: { contacts, ...rest } });
   } catch (e) {
     next(e);
   }
 });
 
-router.get('/:contactId', async (req, res, next) => {
+router.get('/:contactId', guard, async (req, res, next) => {
   try {
-    const contact = await Contacts.getContactById(req.params.contactId);
+    const userId = req.user.id;
+    const contact = await getContactById(userId, req.params.contactId);
     if (contact) {
-      res.json({ status: 'success', code: 200, data: { contact } });
+      return res.json({ status: 'success', code: 200, data: { contact } });
     }
     res.json({ status: 'error', code: 404, message: 'Not Found' });
   } catch (e) {
@@ -25,7 +35,7 @@ router.get('/:contactId', async (req, res, next) => {
   }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', guard, async (req, res, next) => {
   console.log(contactScheme.validate(req.body));
   const { error } = contactScheme.validate(req.body);
 
@@ -37,7 +47,9 @@ router.post('/', async (req, res, next) => {
         message: 'Invalid data' + error.message,
       });
     }
-    const contact = await Contacts.addContact(req.body);
+    const userId = req.user.id;
+
+    const contact = await addContact(userId, req.body);
     return res
       .status(201)
       .json({ status: 'success', code: 201, data: { contact } });
@@ -46,9 +58,11 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.delete('/:contactId', async (req, res, next) => {
+router.delete('/:contactId', guard, async (req, res, next) => {
   try {
-    const contact = await Contacts.removeContact(req.params.contactId);
+    const userId = req.user.id;
+
+    const contact = await removeContact(userId, req.params.contactId);
     if (contact) {
       res.json({ status: 'success', code: 200, data: { contact } });
     }
@@ -58,7 +72,7 @@ router.delete('/:contactId', async (req, res, next) => {
   }
 });
 
-router.patch('/:contactId', async (req, res, next) => {
+router.patch('/:contactId', guard, async (req, res, next) => {
   try {
     const { error } = updateContacts.validate(req.body);
     if (error) {
@@ -69,10 +83,9 @@ router.patch('/:contactId', async (req, res, next) => {
         message: 'Invalid data' + error.message,
       });
     }
-    const contact = await Contacts.updateContact(
-      req.params.contactId,
-      req.body,
-    );
+    const userId = req.user.id;
+
+    const contact = await updateContact(userId, req.params.contactId, req.body);
     if (contact) {
       res.json({ status: 'success', code: 200, data: { contact } });
     }
@@ -82,7 +95,7 @@ router.patch('/:contactId', async (req, res, next) => {
   }
 });
 
-router.patch('/:contactId/favorite', async (req, res, next) => {
+router.patch('/:contactId/favorite', guard, async (req, res, next) => {
   const { contactId } = req.params;
   const { body } = req;
   console.log(Object.keys);
@@ -95,7 +108,9 @@ router.patch('/:contactId/favorite', async (req, res, next) => {
         message: 'missing field favorite',
       });
     }
-    const result = await Contacts.updateStatus(contactId, body);
+    const userId = req.user.id;
+
+    const result = await updateStatus(userId, contactId, body);
     if (!result) {
       res.status(404).json({
         status: 'error',
@@ -116,4 +131,3 @@ router.patch('/:contactId/favorite', async (req, res, next) => {
 });
 
 module.exports = router;
-
