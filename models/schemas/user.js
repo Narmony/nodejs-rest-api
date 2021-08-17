@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const SALT_FACTOR = 6;
 const { CallingPlan } = require('../../helpers/constants');
 const gr = require('gravatar');
+const { v4: uuidv4 } = require('uuid');
 
 const userSchema = new Schema(
   {
@@ -35,6 +36,15 @@ const userSchema = new Schema(
         return gr.url(this.email, { s: '250' }, true);
       },
     },
+    isVerified:{
+      type: Boolean,
+      default: false,
+    },
+    verifyToken:{
+      type: String,
+      require: [true, 'Verify token is required'],
+      default: uuidv4(),
+    }
   },
 
   { versionKey: false, timestamps: true },

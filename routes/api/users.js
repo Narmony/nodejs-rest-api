@@ -1,5 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs/promises');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
 const {
   listUsers,
   findUserById,
@@ -7,17 +12,16 @@ const {
   addUser,
   updateToken,
   updateAvatar,
+  findByVerifyToken,
+  updateTokenVerify
 } = require('../../repositories');
-const jwt = require('jsonwebtoken');
 const { HttpCode } = require('../../helpers/constants');
 const guard = require('./../../helpers/guard');
 const upload = require('./../../helpers/upload');
 const UploadAvatarService = require('../../services/local-upload');
-const fs = require('fs/promises');
-const path = require('path');
+const EmailService = require('../../services/email' )
+const CreateSenderSendGrid = require('../../services/email-sender')
 
-const dotenv = require('dotenv');
-dotenv.config();
 const SECRET_KEY = process.env.SECRET_KEY;
 const { userScheme } = require('./validation');
 
@@ -32,9 +36,19 @@ router.post('/signup', async (req, res, next) => {
       });
     }
 
-    const { id, name, email, subscription, avatarURL } = await addUser(
-      req.body,
-    );
+    const { id, name, email, subscription, avatarURL, verifyToken } =
+      await addUser(req.body);
+
+    try {
+      const emailService = new EmailService(
+        process.env.NODE_ENV,
+        new CreateSenderSendGrid(),
+      )
+      await emailService.sendVerifyEmail(verifyToken, email, name)
+    } catch (error) {
+      console.log(error.message)
+    }
+
     return res.status(HttpCode.CREATED).json({
       status: 'success',
       code: HttpCode.CREATED,
@@ -52,7 +66,7 @@ router.post('/login', async (req, res, next) => {
 
     const isValidPassword = await user?.isValidPassword(req.body.password);
 
-    if (!user || !isValidPassword) {
+    if (!user || !isValidPassword || !user.isVerified) {
       return res.status(HttpCode.UNAUTHORIZED).json({
         status: 'error',
         code: HttpCode.UNAUTHORIZED,
@@ -133,5 +147,59 @@ router.patch(
     }
   },
 );
+
+router.get('/verify/:token', async(req, res, next)=>{
+  try{
+ const user = await findByVerifyToken(req.params.token)
+ if(user){
+   await updateTokenVerify(user.id, true, null)
+  return res.json({
+    status: 'success',
+    code: 200,
+    data: {message: 'Success!'},
+  });
+ }
+ return res.status(HttpCode.BAD_REQUEST).json({
+  status: 'error',
+  code: HttpCode.BAD_REQUEST,
+  message: 'Verification token is not valid',
+});
+  }catch(e){
+next(e)
+  }
+})
+
+router.post('/verify', async(req, res, next)=>{
+  try{
+    const user = await findUserByEmail(req.body.email);
+    if(user){
+      const { name, email, isVerified,verifyToken } = user
+      if (!isVerified) {
+        const emailService = new EmailService(
+          process.env.NODE_ENV,
+          new CreateSenderSendGrid(),
+        );
+        await emailService.sendVerifyEmail(verifyToken, email, name);
+        return res.json({
+          status: 'success',
+          code: 200,
+          data: {message: 'Resubmitted  success!'},
+        });
+      }
+      return res.status(HttpCode.CONFLICT).json({
+        status: 'error',
+        code: HttpCode.CONFLICT,
+        message: 'Verification has already been passed',
+      });
+    }
+  
+    return res.status(HttpCode.NOT_FOUND).json({
+      status: 'error',
+      code: HttpCode.NOT_FOUND,
+      message: 'USER NOT FOUND',
+    });
+
+  }catch(e){next(e)}
+})
 
 module.exports = router;
