@@ -7,7 +7,7 @@ const { listContacts,
 const { listUsers,
   findUserById,
   findUserByEmail,
-  addUser, updateToken} = require('./User')
+  addUser, updateToken, updateAvatar} = require('./User')
 
 module.exports = {
   listContacts,
@@ -20,5 +20,6 @@ module.exports = {
   findUserById,
   findUserByEmail,
   addUser,
-  updateToken
+  updateToken,
+  updateAvatar,
 };

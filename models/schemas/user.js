@@ -2,6 +2,7 @@ const { Schema } = require('mongoose');
 const bcrypt = require('bcryptjs');
 const SALT_FACTOR = 6;
 const { CallingPlan } = require('../../helpers/constants');
+const gr = require('gravatar');
 
 const userSchema = new Schema(
   {
@@ -27,6 +28,12 @@ const userSchema = new Schema(
     token: {
       type: String,
       default: null,
+    },
+    avatarUrl: {
+      type: String,
+      default: function () {
+        return gr.url(this.email, { s: '250' }, true);
+      },
     },
   },
 
