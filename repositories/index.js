@@ -1,13 +1,21 @@
-const { listContacts,
+const {
+  listContacts,
   getContactById,
   removeContact,
   addContact,
   updateContact,
-  updateStatus,} = require('./Contact');
-const { listUsers,
+  updateStatus,
+} = require('./Contact');
+const {
+  listUsers,
   findUserById,
   findUserByEmail,
-  addUser, updateToken, updateAvatar} = require('./User')
+  addUser,
+  updateToken,
+  updateAvatar,
+  findByVerifyToken,
+  updateTokenVerify,
+} = require('./User');
 
 module.exports = {
   listContacts,
@@ -22,4 +30,6 @@ module.exports = {
   addUser,
   updateToken,
   updateAvatar,
+  findByVerifyToken,
+  updateTokenVerify
 };
